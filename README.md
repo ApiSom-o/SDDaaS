@@ -1,3 +1,12 @@
+## Quick Start
+
+git clone https://github.com/ApiSom-o/SDDaaS
+
+cd SDDaaS
+
+pip install matplotlib numpy cryptography tabulate
+
+python3 main.py
 # SDDaaS — Secure Data Deduplication-as-a-Service
 **CSS451|454 Term Project** | SIIT, Thammasat University | 2025
 
