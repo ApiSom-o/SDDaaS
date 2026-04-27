@@ -16,7 +16,7 @@ SDDaaS eliminates duplicate file storage in the cloud while preserving both **pr
 
 ## Experiments
 
-### 1. `SDDaaS_Baseline.py` — SDDaaS vs Linear Search
+### 1. `SDDaaS_Baseline.py` — SDDaaS vs Traditional
 Compares search time and storage cost between a naive linear scan and the SDDaaS system.
 - **Search Time**: Linear O(n) vs SDDaaS O(1) across n = 100 → 50,000 files
 - **Storage Cost**: Traditional (store all) vs SDDaaS (store unique only, 40% dedup ratio)
