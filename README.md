@@ -1,5 +1,7 @@
 ## Quick Start
 
+Open your terminal (or VS Code terminal) and run:
+
 git clone https://github.com/ApiSom-o/SDDaaS
 
 cd SDDaaS
