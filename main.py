@@ -1,10 +1,10 @@
 """
 SDDaaS — Main Runner
 ====================
-Runs both experiments sequentially:
-  1. sddaas_experiment_final.py  — SDDaaS vs Linear Search (search time + storage)
-  2. sddaas_real_experiment.py   — Real measurements (AES-256, BF FPR, latency)
-
+Runs all experiments sequentially:
+  1. SDDaaS_Baseline.py     — SDDaaS vs Linear Search (search time + storage)
+  2. SDDaaS_Demo.py         — Interactive Demo
+  3. SDDaaS_Relatedwork.py  — Analytical comparison vs baseline systems
 Usage:
     python main.py
 """
