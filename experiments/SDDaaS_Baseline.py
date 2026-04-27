@@ -243,7 +243,7 @@ plt.figure(figsize=(12, 5))
 
 # Search Time 
 plt.subplot(1, 2, 1)
-plt.plot(ns, t_lins,  'o-', label='Traditional')  # Traditional = Linear Search baseline
+plt.plot(ns, t_lins,  'o-', label='Linear Search')  # Traditional = Linear Search baseline
 plt.plot(ns, t_sdds,  's-', label='SDDaaS')        # SDDaaS = Partitioned BF + metadata
 plt.xscale('log')
 plt.xlabel('N (files)')
