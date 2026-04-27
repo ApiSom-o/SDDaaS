@@ -26,7 +26,7 @@ Compares search time and storage cost between a naive linear scan and the SDDaaS
 Interactive demonstration of the SDDaaS system.
 - Simulates file upload, deduplication check, and access control flow
 - Runs a local web server for visualization
-- **Note:** Once the server starts, open your browser and go to http://localhost:5500 to view the demo. Press Ctrl+C to stop the demo server and continue to the next experiment.
+- **Note:** Once the server starts, open your browser to view the demo. Press Ctrl+C to stop the demo server and continue to the next experiment.
 
 ### 3. `SDDaaS_Relatedwork.py` — Analytical Comparison vs Baselines
 Compares SDDaaS against 5 published systems using analytical models calibrated to each paper's reported parameters.
