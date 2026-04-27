@@ -51,7 +51,7 @@ Metrics: Search Latency (µs), Storage Used (MB), False Positive Rate (%), Dedup
 pip install matplotlib numpy cryptography tabulate
 ```
 
-Tested on Python 3.10+.
+Tested on Python 3.10+. Use `python3` instead of `python` if needed.
 
 ---
 
@@ -59,20 +59,20 @@ Tested on Python 3.10+.
 
 ### Run all experiments (recommended)
 ```bash
-python main.py
+python3 main.py
 ```
 Runs all experiments sequentially. Output graphs (`.png`) are saved inside the `experiments/` folder.
 
 ### Run individually
 ```bash
 # Experiment 1 — SDDaaS vs Linear Search
-python experiments/SDDaaS_Baseline.py
+python3 experiments/SDDaaS_Baseline.py
 
 # Experiment 2 — Interactive Demo
-python experiments/SDDaaS_Demo.py
+python3 experiments/SDDaaS_Demo.py
 
 # Experiment 3 — Analytical comparison vs baseline systems
-python experiments/SDDaaS_Relatedwork.py
+python3 experiments/SDDaaS_Relatedwork.py
 ```
 
 ---
