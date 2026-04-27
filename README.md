@@ -1,5 +1,5 @@
 # SDDaaS — Secure Data Deduplication-as-a-Service
-**CSS451/454 Term Project** | SIIT, Thammasat University | 2025
+**CSS451|454 Term Project** | SIIT, Thammasat University | 2025
 
 A system for secure cloud file deduplication using **Convergent Encryption (CE)**, **CP-ABE** access control, and a **partitioned Bloom Filter tree** indexed by Client ID × File Type.
 
@@ -26,7 +26,7 @@ Compares search time and storage cost between a naive linear scan and the SDDaaS
 Interactive demonstration of the SDDaaS system.
 - Simulates file upload, deduplication check, and access control flow
 - Runs a local web server for visualization
-- **Note:** Press `Ctrl+C` to stop the demo server and continue to the next experiment
+- **Note:** Once the server starts, open your browser and go to http://localhost:5500 to view the demo. Press Ctrl+C to stop the demo server and continue to the next experiment.
 
 ### 3. `SDDaaS_Relatedwork.py` — Analytical Comparison vs Baselines
 Compares SDDaaS against 5 published systems using analytical models calibrated to each paper's reported parameters.
