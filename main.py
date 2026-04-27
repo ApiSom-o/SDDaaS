@@ -14,8 +14,9 @@ import sys
 import os
 
 EXPERIMENTS = [
-    ("Experiment 1: SDDaaS vs Linear Search", "experiments/sddaas_experiment_final.py"),
-    ("Experiment 2: Real Measurements (AES-256 + BF FPR + Latency)", "experiments/sddaas_real_experiment.py"),
+    ("Experiment 1: SDDaaS Baseline", "experiments/SDDaaS_Baseline.py"),
+    ("Experiment 2: SDDaaS Demo", "experiments/SDDaaS_Demo.py"),
+    ("Experiment 3: Related Work Comparison", "experiments/SDDaaS_Relatedwork.py"),
 ]
 
 def run_experiment(label, path):
