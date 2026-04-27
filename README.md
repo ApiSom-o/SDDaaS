@@ -12,7 +12,7 @@ python3 main.py
 # SDDaaS — Secure Data Deduplication-as-a-Service
 **CSS451|454 Term Project** | SIIT, Thammasat University | 2025
 
-A system for secure cloud file deduplication using **Convergent Encryption (CE)**, **CP-ABE** access control, and a **partitioned Bloom Filter tree** indexed by Client ID × File Type.
+A system for secure cloud file deduplication using **Convergent Encryption (CE)**, **CP-ABE** access control, and a **partitioned Bloom Filter and Search Tree** indexed by Client ID × File Type.
 
 ---
 
