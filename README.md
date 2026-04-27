@@ -7,7 +7,7 @@ A system for secure cloud file deduplication using **Convergent Encryption (CE)*
 
 ## Overview
 
-SDDaaS eliminates duplicate file storage in the cloud while preserving both **privacy** and **fine-grained access control**. Instead of a single global index, SDDaaS routes each deduplication check through a two-level tree (Client → File Type) to a small, dedicated Bloom Filter — achieving O(1) search latency that stays constant as the dataset grows.
+SDDaaS eliminates duplicate file storage in the cloud while preserving both **privacy** and **fine-grained access control**. Instead of a single global index, SDDaaS routes each deduplication check through a two-level tree (Client → File Type) to a small, dedicated Bloom Filter — achieving near-constant search latency regardless of dataset size.
 
 ---
 
