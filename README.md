@@ -13,8 +13,8 @@ SDDaaS proposes a **Secure Data Deduplication-as-a-Service** architecture for mu
 
 - **Convergent Encryption (CE)** — derives a deterministic AES-256 key from `SHA-256(plaintext)`, enabling deduplication on encrypted data
 - **CP-ABE** — wraps the convergent key under a user-defined access policy for fine-grained access control
-- **Partitioned Bloom Filters** — one dedicated filter per `(Client ID × File Type)` leaf node, achieving O(1) duplicate screening with near-zero false positives
-- **Hierarchical Search Tree** — routes each query through `Root → Department → Client → File Type` before any Bloom filter probe, achieving constant-time search regardless of dataset size
+- **Bloom Filters** — one dedicated filter per `(Client ID × File Type)` leaf node, achieving O(1) duplicate screening with near-zero false positives
+- **Search Tree** — routes each query through `Root → Department → Client → File Type` before any Bloom filter probe, achieving constant-time search regardless of dataset size
 
 ---
 
