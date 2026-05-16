@@ -1,6 +1,6 @@
 # SDDaaS — Secure Data Deduplication-as-a-Service Using Search Tree and Bloom Filter
 
-> **CSS451-454 Term Project | SIIT, Thammasat University**
+> **CSS451-454 Term Project | School of ICT, SIIT, Thammasat University**
 
 ---
 
@@ -13,22 +13,22 @@
 | Apisara Kocharoenkiat | 6622772695 |
 | Wanitcha Saengbundit | 6622780631 |
 
-**Advisor:** Asst. Prof. Dr. Somchart Fugkaew
-**School of Information, Computer and Communication Technology (ICT)**
+**Advisor:** Asst. Prof. Dr. Somchart Fugkaew  
+**School of Information, Computer and Communication Technology (ICT)**  
 **Sirindhorn International Institute of Technology (SIIT), Thammasat University**
 
 ---
 
 ## 📌 Project Overview
 
-**SDDaaS** (Secure Deduplication as a Service) is a cloud-storage deduplication system that uses a **3-level Search Tree** (Department → Client → File Type) combined with **Bloom Filters** to detect duplicate files with near-zero false positive rates while preserving data privacy through Convergent Encryption (CE) and CP-ABE overhead modeling.
+**SDDaaS** (Secure Data Deduplication-as-a-Service) is a cloud-storage deduplication system that uses a **3-level hierarchical Search Tree** (Department → Client → File Type) combined with **partitioned Bloom Filters** to detect duplicate files with near-zero false positive rates, while preserving data privacy through Convergent Encryption (CE) and CP-ABE access control.
 
 ### Key Features
-- ✅ **O(1) 3-level tree routing** 
-- ✅ **Partitioned Bloom Filters** 
-- ✅ **3-layer false positive mitigation**
-- ✅ **Near-zero FPR** 
-- ✅ **Interactive web demo**
+- ✅ **O(1) 3-level tree routing** — no full scan across 50,000 clients
+- ✅ **500,000 partitioned Bloom Filters** — one per client × file type
+- ✅ **3-layer false positive mitigation** — architectural isolation + math optimization + deterministic fallback
+- ✅ **Near-zero FPR** — items/leaf ≈ 1.5, far below BF capacity
+- ✅ **Interactive web demo** — drag-and-drop upload, batch mode, simulate 5,000 files
 
 ---
 
@@ -38,9 +38,9 @@
 SDDaaS/
 ├── README.md
 ├── requirements.txt
-├── demo.py                  # Web demo server (SDDaaS engine + interactive UI)
-├── compare.py               # Simulation & comparison vs 5 related works
-├── generate_test_dataset.py # Script to generate 5,000 unique test PDF files
+├── demo.py                  # Web demo server (SDDaaS engine + browser UI)
+├── compare.py               # Benchmark comparison vs 5 related works (Mac)
+├── generate_test_dataset.py # Generates 5,000 unique PDF test files
 ├── dataset.csv              # Dataset 1 — 50,000 employees (Emp_ID, Dept_ID)
 └── secure_dedup_50k.csv     # Dataset 2 — 500,000 file upload records
 ```
@@ -63,26 +63,32 @@ SDDaaS/
 |--------|-------------|
 | `Emp_ID` | Employee ID |
 | `Dept_ID` | Department ID |
-| `File_Type` | One of 10 types (Database, Image, PDF, Document, SourceCode, Archive, Presentation, Spreadsheet, Log, Video) |
+| `File_Type` | Database, Image, PDF, Document, SourceCode, Archive, Presentation, Spreadsheet, Log, Video |
 | `File_Size_KB` | File size in KB |
-| `File_Hash` | SHA-256 hash (truncated 16 hex chars) |
+| `File_Hash` | SHA-256 hash (truncated) |
 | `Upload_Date` | Upload timestamp |
 | `Is_Duplicate` | Boolean duplicate flag |
 
 - **500,000 records** | Duplicate ratio ≈ **15.05%** | Avg file size ≈ **5,022 KB**
-- Used by `compare.py` for benchmark calculations
+- Used by `compare.py` for all benchmark calculations
 
 ---
 
 ## ⚙️ Requirements
 
-- Python **3.9+** — check with `python3 --version`
-- pip — check with `pip3 --version`
-- Git — check with `git --version`
+- Python **3.9+**
+- macOS (for `compare.py` — uses `matplotlib MacOSX` backend and `open` command)
+- `demo.py` works on any OS
+
+Install dependencies:
+
+```bash
+pip3 install -r requirements.txt
+```
 
 ---
 
-## 🚀 How to Run (Step-by-Step)
+## 🚀 How to Run
 
 ### Step 1 — Clone the repository
 
@@ -98,25 +104,12 @@ cd SDDaaS
 
 ### Step 3 — Verify datasets are present
 
-The datasets are included in the repository and downloaded automatically when you clone.
-Check that both files exist:
-
 ```bash
 ls
 ```
 
-You should see:
-```
-dataset.csv           ← required by demo.py
-secure_dedup_50k.csv  ← required by compare.py
-demo.py
-compare.py
-generate_test_dataset.py ← required by demo.py
-requirements.txt
-README.md
-```
-
-> ⚠️ **Both CSV files must exist before running any script.** If missing, re-clone the repository.
+You should see both `dataset.csv` and `secure_dedup_50k.csv` in the folder.
+If missing, re-clone the repository.
 
 ### Step 4 — Install dependencies
 
@@ -124,44 +117,48 @@ README.md
 pip3 install -r requirements.txt
 ```
 
-### Step 5 — Generate Unique Test Dataset
+### Step 5 — Generate unique test dataset
 
-> ⚠️ **Run this before running demo.py or compare.py**
+> ⚠️ **Run this before running `demo.py`**
 
 ```bash
 python3 generate_test_dataset.py
 ```
 
-Creates `Unique_Test_Dataset/` folder with **5,000 unique PDF files** (each with a unique SHA-256 hash).
-Used with the demo to test the engine with real unique files and verify zero false duplicates.
+Creates `Unique_Test_Dataset/` folder with **5,000 unique PDF files**, each with a unique SHA-256 hash. Use these files in the demo to verify zero false duplicates on a fully unique dataset.
 
 ---
 
 ### Step 6 — Run the scripts
 
-> All scripts are run directly from the `SDDaaS/` folder
+**▶ Demo — Interactive Web UI**
 
-**▶ Demo (Interactive Web UI)**
 ```bash
 python3 demo.py
 ```
+
 Browser opens automatically at `http://localhost:8765`
 
 | Mode | Description |
 |------|-------------|
-| **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter check → Metadata exact-match |
-| **Batch upload** | Hashes multiple files instantly, sends JSON to server, BF checks all at once |
-| **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicates in-memory, no real files needed |
+| **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter → Metadata exact-match |
+| **Batch upload** | Hashes multiple files instantly (filename + size), sends JSON to server, BF checks all at once |
+| **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicates in-memory — no real files needed |
 
 > 💡 You can drag files from `Unique_Test_Dataset/` into the demo to test with real unique files.
 
 ---
 
-**▶ Comparison Benchmark (Graphs)**
+**▶ Comparison Benchmark — 4 Graphs** *(macOS only)*
+
 ```bash
 python3 compare.py
 ```
-Prints 4 comparison tables and saves **`sddaas_graph.png`**
+
+- Loads `secure_dedup_50k.csv` automatically from the same folder — no need to `cd` first
+- Prints 4 comparison tables to the terminal
+- Saves **`sddaas_graph.png`** in the same folder as `compare.py`
+- Opens the graph automatically after saving
 
 | Graph | Metric | Systems |
 |-------|--------|---------|
@@ -182,29 +179,6 @@ Baseline systems simulated inside `compare.py`:
 
 ---
 
-## 🔬 System Architecture
-
-```
-Upload Request
-     │
-     ▼
-[3-Level Search Tree]
-  Root → Dept (D01–D20) → Emp (E00001–E50000) → FileType (10 types)
-     │
-     ▼
-[Bloom Filter @ Leaf]
-  capacity = 2 × avg_items | FPR target = 1%
-  items/leaf ≈ 1.5  →  actual FPR ≈ near-zero
-     │
-  BF miss → NEW FILE → insert BF + Metadata → store ciphertext
-  BF hit  → check Metadata
-               │
-               exact match → DUPLICATE → store 64-byte reference only
-               no match    → false positive → treat as new
-```
-
----
-
 ## 📈 Benchmark Results (N = 500,000 files, dup_ratio = 15.05%)
 
 | System | Latency (µs) | FPR (%) | Storage (MB) | Dedup Eff. |
@@ -216,23 +190,9 @@ Upload Request
 | TSCF 2021 (Two-Stage CF) | 4.194 | 0.195 | — | — |
 | FCDedup 2023 (Fog+Cloud) | 392.025 | 0.000 | — | — |
 
-SDDaaS achieves **the lowest latency** and **highest dedup efficiency** simultaneously. The only tradeoff is ~4.4% higher raw storage than Xiong 2019, which is the justified cost of CP-ABE key protection and per-partition BF metadata.
-
 ---
 
-## 📦 Requirements
-
-```
-pandas>=1.5.0
-matplotlib>=3.5.0
-tabulate>=0.9.0
-```
-
-See `requirements.txt` for exact versions.
-
----
-
-## 📄 Related Works (simulated in `experiments/compare.py`)
+## 📄 Related Works (simulated in `compare.py`)
 
 1. Z. Li et al., "Deduplication of files in cloud storage based on differential bloom filter," IEEE ICSESS 2016.
 2. J. R. Douceur et al., "Reclaiming space from duplicate files in a serverless distributed file system," IEEE ICDCS 2002.
