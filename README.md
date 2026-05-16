@@ -21,14 +21,14 @@
 
 ## 📌 Project Overview
 
-**SDDaaS** (Secure Data Deduplication-as-a-Service) is a cloud-storage deduplication system that uses a **3-level hierarchical Search Tree** (Department → Client → File Type) combined with **partitioned Bloom Filters** to detect duplicate files with near-zero false positive rates, while preserving data privacy through Convergent Encryption (CE) and CP-ABE access control.
+**SDDaaS** (Secure Data Deduplication-as-a-Service) is a cloud-storage deduplication system that uses a **3-level Search Tree** (Department → Client → File Type) combined with **partitioned Bloom Filters** to detect duplicate files with near-zero false positive rates, while preserving data privacy through Convergent Encryption (CE) and CP-ABE access control.
 
 ### Key Features
-- ✅ **O(1) 3-level tree routing** — no full scan across 50,000 clients
-- ✅ **500,000 partitioned Bloom Filters** — one per client × file type
-- ✅ **3-layer false positive mitigation** — architectural isolation + math optimization + deterministic fallback
-- ✅ **Near-zero FPR** — items/leaf ≈ 1.5, far below BF capacity
-- ✅ **Interactive web demo** — drag-and-drop upload, batch mode, simulate 5,000 files
+- ✅ **O(1) 3-level tree routing** 
+- ✅ **500,000 partitioned Bloom Filters** 
+- ✅ **3-layer false positive mitigation** 
+- ✅ **Near-zero FPR** 
+- ✅ **Interactive web demo** 
 
 ---
 
@@ -38,8 +38,8 @@
 SDDaaS/
 ├── README.md
 ├── requirements.txt
-├── demo.py                  # Web demo server (SDDaaS engine + browser UI)
-├── compare.py               # Benchmark comparison vs 5 related works (Mac)
+├── demo.py                  # Web demo server 
+├── compare.py               # Benchmark comparison vs 5 related works 
 ├── generate_test_dataset.py # Generates 5,000 unique PDF test files
 ├── dataset.csv              # Dataset 1 — 50,000 employees (Emp_ID, Dept_ID)
 └── secure_dedup_50k.csv     # Dataset 2 — 500,000 file upload records
@@ -143,7 +143,6 @@ Browser opens automatically at `http://localhost:8765`
 |------|-------------|
 | **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter → Metadata exact-match |
 | **Batch upload** | Hashes multiple files instantly (filename + size), sends JSON to server, BF checks all at once |
-| **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicates in-memory — no real files needed |
 
 > 💡 You can drag files from `Unique_Test_Dataset/` into the demo to test with real unique files.
 
