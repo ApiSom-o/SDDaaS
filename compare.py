@@ -1,20 +1,18 @@
-import math
-import os
+import math, os, subprocess
 import pandas as pd
 import matplotlib
-import os
-os.environ.setdefault('MPLBACKEND', 'Agg')
-matplotlib.use(os.environ.get('MPLBACKEND', 'Agg'))
+matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from tabulate import tabulate
 from abc import ABC, abstractmethod
 
+_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # ════════════════════════════════════════════════════════════════════════════
 #  SECTION 1 : LOAD DATASET
 # ════════════════════════════════════════════════════════════════════════════
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
 df = pd.read_csv(os.path.join(_DIR, "secure_dedup_50k.csv"))
 
 N_CLIENTS_FIXED  = df["Emp_ID"].nunique()
@@ -149,11 +147,7 @@ class ComparisonSystem(ABC):
 
 class Li2016(ComparisonSystem):
     NAME    = "Li 2016 (Diff-BF)"; COLOR = "#E07B39"; MARKER = "o"
-    SC_FRAC = 0.87
-    CDC_FRAC = 0.13
-    Cs = 16.0
-    Cc = 1.0
-    MAX_EFF = 0.18
+    SC_FRAC = 0.87; CDC_FRAC = 0.13; Cs = 16.0; Cc = 1.0; MAX_EFF = 0.18
 
     @classmethod
     def _split_bf(cls, n: int):
@@ -172,7 +166,7 @@ class Li2016(ComparisonSystem):
     @classmethod
     def compute_fpr(cls, n: int) -> float:
         n_sc, n_cdc, m1, m2, k1, k2 = cls._split_bf(n)
-        return (cls.SC_FRAC  * bf_fpr_actual(n_sc,  m1, k1) +
+        return (cls.SC_FRAC * bf_fpr_actual(n_sc, m1, k1) +
                 cls.CDC_FRAC * bf_fpr_actual(n_cdc, m2, k2))
 
     @classmethod
@@ -200,9 +194,7 @@ class Li2016(ComparisonSystem):
 
 class Douceur2002(ComparisonSystem):
     NAME      = "Douceur 2002 (SALAD)"; COLOR = "#27AE60"; MARKER = "^"
-    D         = 2
-    LAMBDA    = 2.5
-    REC_BYTES = 36
+    D         = 2; LAMBDA = 2.5; REC_BYTES = 36
 
     @classmethod
     def _ploss(cls) -> float:
@@ -234,10 +226,7 @@ class Douceur2002(ComparisonSystem):
 
 class Xiong2019(ComparisonSystem):
     NAME      = "Xiong 2019 (SRRS)"; COLOR = "#9B59B6"; MARKER = "s"
-    RAT_ORDER = 3
-    DCF_FPR   = 0.01
-    RKEY_BITS = 256
-    PENALTY   = 0.03
+    RAT_ORDER = 3; DCF_FPR = 0.01; RKEY_BITS = 256; PENALTY = 0.03
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
@@ -271,8 +260,7 @@ class Xiong2019(ComparisonSystem):
 
 class TSCF2021(ComparisonSystem):
     NAME   = "TSCF 2021 (Two-Stage CF)"; COLOR = "#C0392B"; MARKER = "P"
-    CF_F   = 12
-    CF_B   = 4
+    CF_F   = 12; CF_B = 4
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
@@ -302,8 +290,7 @@ class TSCF2021(ComparisonSystem):
 
 class FCDedup2023(ComparisonSystem):
     NAME            = "FCDedup 2023 (Fog+Cloud)"; COLOR = "#795548"; MARKER = "X"
-    SHORT_HASH_BITS = 10
-    N_FOG           = 4
+    SHORT_HASH_BITS = 10; N_FOG = 4
 
     @classmethod
     def _nocn(cls, n: int) -> float:
@@ -485,135 +472,106 @@ ax2 = fig.add_subplot(gs[0, 1])
 ax3 = fig.add_subplot(gs[1, 0])
 ax4 = fig.add_subplot(gs[1, 1])
 
-# ── Graph 1: Search Latency (µs) ───────────────────────────────
 for k in ["li2016","douceur","xiong2019","tscf2021","fcdedup"]:
     Cls = SYS_CLS[k]
-    ax1.plot(NS, data[k]["latency_us"],
-             marker=Cls.MARKER, color=Cls.COLOR,
+    ax1.plot(NS, data[k]["latency_us"], marker=Cls.MARKER, color=Cls.COLOR,
              linewidth=1.8, markersize=5.5, label=Cls.NAME)
-ax1.plot(NS, data["sddaas"]["latency_us"],
-         marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
+ax1.plot(NS, data["sddaas"]["latency_us"], marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
          linewidth=2.8, markersize=6.5, label=SDDaaS.NAME)
 ax1.set_xscale("log")
-ax_style(ax1, "Graph 1 – Search Latency (µs)  [6 Systems,  lower = better]",
-         "Latency (µs)", XLABEL)
+ax_style(ax1, "Graph 1 – Search Latency (µs)  [6 Systems,  lower = better]", "Latency (µs)", XLABEL)
 ax1.legend(fontsize=7.2, loc="upper left", framealpha=0.95)
 _sd_lat = data["sddaas"]["latency_us"][-1]
 _fc_lat = data["fcdedup"]["latency_us"][-1]
-ax1.annotate(
-    f"SDDaaS: O(1) × 3 levels\n≈ {_sd_lat:.2f} µs  (flat)",
+ax1.annotate(f"SDDaaS: O(1) × 3 levels\n≈ {_sd_lat:.2f} µs  (flat)",
     xy=(NS[-2], _sd_lat), xytext=(NS[-3]*1.5, _sd_lat + 50),
     fontsize=7.5, color=SDDaaS.COLOR, ha="center",
     arrowprops=dict(**ARR, color=SDDaaS.COLOR), bbox=BBOX["sd"])
-ax1.annotate(
-    f"FCDedup: O(N) bilinear\n≈ {_fc_lat:.0f} µs @ N=500K",
+ax1.annotate(f"FCDedup: O(N) bilinear\n≈ {_fc_lat:.0f} µs @ N=500K",
     xy=(NS[-1], _fc_lat), xytext=(NS[-4]*1.3, _fc_lat*0.82),
     fontsize=7.0, color=FCDedup2023.COLOR, ha="center",
     arrowprops=dict(**ARR, color=FCDedup2023.COLOR), bbox=BBOX["fc"])
 
-# ── Graph 2: Storage Used (MB) ─────────────────────────────────
 for k in ["li2016","douceur","xiong2019"]:
     Cls = SYS_CLS[k]
-    ax2.plot(NS, data[k]["storage_mb"],
-             marker=Cls.MARKER, color=Cls.COLOR,
+    ax2.plot(NS, data[k]["storage_mb"], marker=Cls.MARKER, color=Cls.COLOR,
              linewidth=1.8, markersize=5.5, label=Cls.NAME)
-ax2.plot(NS, data["sddaas"]["storage_mb"],
-         marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
+ax2.plot(NS, data["sddaas"]["storage_mb"], marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
          linewidth=2.8, markersize=6.5, label=SDDaaS.NAME)
 ax2.set_xscale("log")
-ax_style(ax2, "Graph 2 – Storage Used (MB)  [4 Systems,  lower = better]",
-         "Storage (MB)", XLABEL)
+ax_style(ax2, "Graph 2 – Storage Used (MB)  [4 Systems,  lower = better]", "Storage (MB)", XLABEL)
 ax2.legend(fontsize=7.5, loc="upper left", framealpha=0.95)
-ax2.annotate(
-    f"Li 2016: max 18% dedup\n→ highest storage",
+ax2.annotate(f"Li 2016: max 18% dedup\n→ highest storage",
     xy=(NS[-2], data["li2016"]["storage_mb"][-2]),
     xytext=(NS[-3]*2.2, data["li2016"]["storage_mb"][-2]*0.52),
     fontsize=7.0, color=Li2016.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Li2016.COLOR), bbox=BBOX["li"])
-ax2.annotate(
-    f"SDDaaS: {DUP_RATIO*100:.1f}% dedup\n+ {N_BF_PARTITIONS:,} BF partitions",
+ax2.annotate(f"SDDaaS: {DUP_RATIO*100:.1f}% dedup\n+ {N_BF_PARTITIONS:,} BF partitions",
     xy=(NS[-3], data["sddaas"]["storage_mb"][-3]),
     xytext=(NS[-5]*2.0, data["sddaas"]["storage_mb"][-3]*2.2),
     fontsize=7.0, color=SDDaaS.COLOR, ha="center",
     arrowprops=dict(**ARR, color=SDDaaS.COLOR), bbox=BBOX["sd"])
 
-# ── Graph 3: False Positive Rate (%) ───────────────────────────
 for k in ["li2016","douceur","xiong2019"]:
     Cls = SYS_CLS[k]
     ls  = "--" if k == "douceur" else "-"
-    ax3.plot(NS, data[k]["fpr"],
-             marker=Cls.MARKER, color=Cls.COLOR,
+    ax3.plot(NS, data[k]["fpr"], marker=Cls.MARKER, color=Cls.COLOR,
              linewidth=1.8, markersize=5.5, linestyle=ls, label=Cls.NAME)
-ax3.plot(NS, data["sddaas"]["fpr"],
-         marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
+ax3.plot(NS, data["sddaas"]["fpr"], marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
          linewidth=2.8, markersize=6.5, label=SDDaaS.NAME)
 ax3.set_xscale("log")
-ax_style(ax3, "Graph 3 – False Positive Rate (%)  [4 Systems,  lower = better]",
-         "FPR (%)", XLABEL)
+ax_style(ax3, "Graph 3 – False Positive Rate (%)  [4 Systems,  lower = better]", "FPR (%)", XLABEL)
 ax3.legend(fontsize=7.5, loc="upper left", framealpha=0.95, bbox_to_anchor=(0.01, 0.72))
-ax3.annotate(
-    f"SDDaaS: items/leaf = N/{N_BF_PARTITIONS:,}\n→ FPR near-zero",
+ax3.annotate(f"SDDaaS: items/leaf = N/{N_BF_PARTITIONS:,}\n→ FPR near-zero",
     xy=(NS[-2], data["sddaas"]["fpr"][-2]),
     xytext=(NS[-4]*1.5, data["sddaas"]["fpr"][-2] + 0.35),
     fontsize=7.0, color=SDDaaS.COLOR, ha="center",
     arrowprops=dict(**ARR, color=SDDaaS.COLOR), bbox=BBOX["sd"])
-ax3.annotate(
-    f"Li 2016: global BF → FPR grows\n≈{data['li2016']['fpr'][-1]:.2f}% @ N=500K",
+ax3.annotate(f"Li 2016: global BF → FPR grows\n≈{data['li2016']['fpr'][-1]:.2f}% @ N=500K",
     xy=(NS[-1], data["li2016"]["fpr"][-1]),
     xytext=(NS[-3]*1.5, (data["li2016"]["fpr"][-1] + data["xiong2019"]["fpr"][-1]) / 2),
     fontsize=7.0, color=Li2016.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Li2016.COLOR), bbox=BBOX["li"])
-ax3.annotate(
-    "Xiong 2019: DCF FPR=1%\n(constant)",
+ax3.annotate("Xiong 2019: DCF FPR=1%\n(constant)",
     xy=(NS[3], data["xiong2019"]["fpr"][3]),
     xytext=(NS[2]*1.8, data["xiong2019"]["fpr"][3] - 0.28),
     fontsize=7.0, color=Xiong2019.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Xiong2019.COLOR), bbox=BBOX["xi"])
 
-# ── Graph 4: Storage Saved (%) vs Duplication Ratio ──────────────────────
 for key, Cls in [("li2016",Li2016),("douceur",Douceur2002),("xiong2019",Xiong2019)]:
-    ax4.plot(dup_pct, g4[key],
-             marker=Cls.MARKER, color=Cls.COLOR,
+    ax4.plot(dup_pct, g4[key], marker=Cls.MARKER, color=Cls.COLOR,
              linewidth=1.8, markersize=4, label=Cls.NAME)
-ax4.plot(dup_pct, g4["sddaas"],
-         marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
+ax4.plot(dup_pct, g4["sddaas"], marker=SDDaaS.MARKER, color=SDDaaS.COLOR,
          linewidth=2.8, markersize=5, label=SDDaaS.NAME)
 ax4.plot(dup_pct, [d * 100 for d in DUP_RANGE],
          color="gray", linestyle=":", linewidth=1.2, alpha=0.6, label="Ideal (100%)")
 
 real_dup_pct = DUP_RATIO * 100
 ax4.axvline(x=real_dup_pct, color="#E74C3C", linestyle="--", linewidth=1.2, alpha=0.7)
-ax4.text(real_dup_pct + 1.2, 2,
-         f"Dataset\n{real_dup_pct:.2f}%",
+ax4.text(real_dup_pct + 1.2, 2, f"Dataset\n{real_dup_pct:.2f}%",
          fontsize=7.5, color="#E74C3C", fontweight="bold")
 
 for key, color in [("sddaas", SDDaaS.COLOR), ("li2016", Li2016.COLOR),
                    ("douceur", Douceur2002.COLOR), ("xiong2019", Xiong2019.COLOR)]:
-    ax4.scatter([real_dup_pct], [g4[key][idx_real]],
-                color=color, s=100, zorder=6, marker="*")
+    ax4.scatter([real_dup_pct], [g4[key][idx_real]], color=color, s=100, zorder=6, marker="*")
 
 ax4.set_ylim(0, 85)
-ax_style(ax4,
-         "Graph 4 – Storage Saved (%)  [4 Systems,  higher = better]\n",
+ax_style(ax4, "Graph 4 – Storage Saved (%)  [4 Systems,  higher = better]\n",
          xlabel="Duplication Ratio (%)")
 ax4.legend(fontsize=7.5, loc="upper left", framealpha=0.95)
-
-ax4.annotate(
-    f"SDDaaS ≈ {g4['sddaas'][idx_real]:.2f}%\n= Table IV ★",
-    xy=(real_dup_pct, g4["sddaas"][idx_real]),
-    xytext=(35, 62),
+ax4.annotate(f"SDDaaS ≈ {g4['sddaas'][idx_real]:.2f}%\n= Table IV ★",
+    xy=(real_dup_pct, g4["sddaas"][idx_real]), xytext=(35, 62),
     fontsize=7.0, color=SDDaaS.COLOR, ha="center",
     arrowprops=dict(**ARR, color=SDDaaS.COLOR), bbox=BBOX["sd"])
-ax4.annotate(
-    f"Li 2016 ≈ {g4['li2016'][idx_real]:.2f}%\ncap=18% ★",
+ax4.annotate(f"Li 2016 ≈ {g4['li2016'][idx_real]:.2f}%\ncap=18% ★",
     xy=(real_dup_pct, g4["li2016"][idx_real]),
     xytext=(min(real_dup_pct + 20, 74), g4["li2016"][idx_real] - 4),
     fontsize=7.0, color=Li2016.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Li2016.COLOR), bbox=BBOX["li"])
 
-plt.savefig("sddaas_graph.png", dpi=150, bbox_inches="tight",
-            facecolor=fig.get_facecolor())
-print("[Output] Graph saved → sddaas_graph.png")
-plt.show()
+out_path = os.path.join(_DIR, "sddaas_graph.png")
+plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+print(f"[Output] Graph saved → {out_path}")
 plt.close()
+subprocess.run(["open", out_path])
 print("[Done]")
