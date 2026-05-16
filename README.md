@@ -1,6 +1,6 @@
 # SDDaaS — Secure Data Deduplication-as-a-Service Using Search Tree and Bloom Filter
 
-> **CSS451-454 Term Project | School of ICT, SIIT, Thammasat University**
+> **CSS451-454 Term Project | SIIT, Thammasat University**
 
 ---
 
@@ -21,15 +21,14 @@
 
 ## 📌 Project Overview
 
-**SDDaaS** (Secure Deduplication as a Service) is a cloud-storage deduplication system that uses a **3-level hierarchical Search Tree** (Department → Employee → File Type) combined with **Bloom Filters** to detect duplicate files with near-zero false positive rates while preserving data privacy through Convergent Encryption (CE) and CP-ABE overhead modeling.
+**SDDaaS** (Secure Deduplication as a Service) is a cloud-storage deduplication system that uses a **3-level Search Tree** (Department → Client → File Type) combined with **Bloom Filters** to detect duplicate files with near-zero false positive rates while preserving data privacy through Convergent Encryption (CE) and CP-ABE overhead modeling.
 
 ### Key Features
-- ✅ **O(1) 3-level tree routing** — no full scan across 50,000 clients
-- ✅ **Partitioned Bloom Filters** — 500,000 independent BF partitions (50K clients × 10 file types)
-- ✅ **3-layer false positive mitigation** — architectural isolation + math optimization + deterministic fallback
-- ✅ **Near-zero FPR** — items/leaf ≈ 1.5, far below BF capacity
-- ✅ **Instant batch deduplication** — browser pre-hashes via SubtleCrypto, sends JSON only
-- ✅ **Interactive web demo** — built-in HTTP server, no external framework required
+- ✅ **O(1) 3-level tree routing** 
+- ✅ **Partitioned Bloom Filters** 
+- ✅ **3-layer false positive mitigation**
+- ✅ **Near-zero FPR** 
+- ✅ **Interactive web demo**
 
 ---
 
