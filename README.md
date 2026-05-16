@@ -124,13 +124,22 @@ README.md
 pip3 install -r requirements.txt
 ```
 
-### Step 5 — Run the scripts
+### Step 5 — Generate Unique Test Dataset
 
-> All scripts are run directly from the `SDDaaS/` folder
+> ⚠️ **Run this before running demo.py or compare.py**
+
+```bash
+python3 generate_test_dataset.py
+```
+
+Creates `Unique_Test_Dataset/` folder with **5,000 unique PDF files** (each with a unique SHA-256 hash).
+Used with the demo to test the engine with real unique files and verify zero false duplicates.
 
 ---
 
-### Step 5 — Run the scripts
+### Step 6 — Run the scripts
+
+> All scripts are run directly from the `SDDaaS/` folder
 
 **▶ Demo (Interactive Web UI)**
 ```bash
@@ -143,6 +152,8 @@ Browser opens automatically at `http://localhost:8765`
 | **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter check → Metadata exact-match |
 | **Batch upload** | Hashes multiple files instantly, sends JSON to server, BF checks all at once |
 | **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicates in-memory, no real files needed |
+
+> 💡 You can drag files from `Unique_Test_Dataset/` into the demo to test with real unique files.
 
 ---
 
@@ -168,14 +179,6 @@ Baseline systems simulated inside `compare.py`:
 | `Xiong2019` | SRRS: Role-Authorized Tree + DCF — IEEE Access 2019 |
 | `TSCF2021` | Two-Stage Cuckoo Filter — IEEE MSN 2021 |
 | `FCDedup2023` | Fog+Cloud Two-Level Dedup — IEEE TPDS 2023 |
-
----
-
-**▶ Generate Unique Test Dataset (optional)**
-```bash
-python3 generate_test_dataset.py
-```
-Creates `Unique_Test_Dataset/` folder with 5,000 unique PDF files (each with a unique SHA-256 hash) to verify the engine detects zero false duplicates on a fully unique dataset.
 
 ---
 
