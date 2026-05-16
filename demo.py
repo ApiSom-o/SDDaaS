@@ -1444,13 +1444,13 @@ select:focus {
  <div class="sc-div"></div>
  <div class="sc"><div class="sc-num" id="sc-dept">—</div><div class="sc-lbl">Departments</div></div>
  <div class="sc-div"></div>
- <div class="sc"><div class="sc-num" style="color:var(--purple)">5,003</div><div class="sc-lbl">Files/Client BF</div></div>
- <div class="sc-div"></div>
- <div class="sc"><div class="sc-num" id="sc-entries" style="color:var(--purple)">—</div><div class="sc-lbl">Total BF Entries</div></div>
- <div class="sc-div"></div>
- <div class="sc"><div class="sc-num" id="sc-used" style="color:var(--accent2)">—</div><div class="sc-lbl">Storage Used</div></div>
- <div class="sc-div"></div>
- <div class="sc"><div class="sc-num" id="sc-ms" style="color:var(--warn)">—</div><div class="sc-lbl">Seed Time</div></div>
+ <div class="sc" style="display:none"><div class="sc-num" style="color:var(--purple)">5,003</div><div class="sc-lbl">Files/Client BF</div></div>
+ <div class="sc-div" style="display:none"></div>
+ <div class="sc" style="display:none"><div class="sc-num" id="sc-entries" style="color:var(--purple)">—</div><div class="sc-lbl">Total BF Entries</div></div>
+ <div class="sc-div" style="display:none"></div>
+ <div class="sc" style="display:none"><div class="sc-num" id="sc-used" style="color:var(--accent2)">—</div><div class="sc-lbl">Storage Used</div></div>
+ <div class="sc-div" style="display:none"></div>
+ <div class="sc" style="display:none"><div class="sc-num" id="sc-ms" style="color:var(--warn)">—</div><div class="sc-lbl">Seed Time</div></div>
 </div>
 
 
@@ -1460,7 +1460,7 @@ select:focus {
 </div>
 
 
-<div class="info-bar purple">
+<div class="info-bar purple" style="display:none">
  <div class="info-bar-title">
    🎲 Random pre-seeded hashes per client
    <span class="rand-pill" id="rand-pill">5,000 × N</span>
