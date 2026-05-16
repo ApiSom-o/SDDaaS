@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib
 import os
 os.environ.setdefault('MPLBACKEND', 'Agg')
-matplotlib.use(os.environ.get('MPLBACKEND', 'Agg'))  # เปลี่ยนเป็น 'Agg' ถ้า run บน server ที่ไม่มี display
+matplotlib.use(os.environ.get('MPLBACKEND', 'Agg'))
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from tabulate import tabulate
@@ -15,22 +15,20 @@ from abc import ABC, abstractmethod
 
 df = pd.read_csv("secure_dedup_50k.csv")
 
-N_CLIENTS_FIXED  = df["Emp_ID"].nunique()       # จำนวน client ทั้งหมด = 50,000
-N_DEPTS          = df["Dept_ID"].nunique()       # จำนวน department = 20
-N_FILETYPES      = df["File_Type"].nunique()     # จำนวนประเภทไฟล์ = 10
+N_CLIENTS_FIXED  = df["Emp_ID"].nunique()
+N_DEPTS          = df["Dept_ID"].nunique()
+N_FILETYPES      = df["File_Type"].nunique()
 FILE_TYPES       = sorted(df["File_Type"].unique())
 
 DEPT_SIZES       = df.groupby("Dept_ID")["Emp_ID"].nunique().sort_index()
-DEPT_DIST        = DEPT_SIZES / DEPT_SIZES.sum() # สัดส่วนขนาดของแต่ละ dept
+DEPT_DIST        = DEPT_SIZES / DEPT_SIZES.sum()
 
-# ค่าพารามิเตอร์จาก dataset 
-DUP_RATIO        = round(df["Is_Duplicate"].mean(), 4)    # อัตราซ้ำ = 0.1505 (15.05%)
-AVG_FILE_SIZE_KB = round(df["File_Size_KB"].mean(), 1)    # ขนาดไฟล์เฉลี่ย = 5022.5 KB
-N_BF_PARTITIONS  = N_CLIENTS_FIXED * N_FILETYPES          # จำนวน BF partition ทั้งหมด = 500,000
+DUP_RATIO        = round(df["Is_Duplicate"].mean(), 4)
+AVG_FILE_SIZE_KB = round(df["File_Size_KB"].mean(), 1)
+N_BF_PARTITIONS  = N_CLIENTS_FIXED * N_FILETYPES
 
-# ค่าเฉลี่ย item ต่อ leaf BF (ใช้คำนวณ FPR ของ SDDaaS)
 _fpct            = df.groupby(["Emp_ID", "File_Type"]).size()
-AVG_ITEMS_LEAF   = round(_fpct.mean(), 3)                 # ≈ 1.535 items/leaf
+AVG_ITEMS_LEAF   = round(_fpct.mean(), 3)
 
 print(f"[Dataset] {len(df):,} records | {N_CLIENTS_FIXED:,} clients | "
       f"{N_DEPTS} depts | {N_FILETYPES} file types")
@@ -38,47 +36,35 @@ print(f"[Dataset] DUP_RATIO={DUP_RATIO:.4f} ({DUP_RATIO*100:.2f}%) | "
       f"AVG_FILE_SIZE={AVG_FILE_SIZE_KB:.0f} KB | "
       f"BF_PARTITIONS={N_BF_PARTITIONS:,}")
 
-# ขนาด N ที่ใช้ทดสอบ (10K–500K); 500K = ขนาดเต็มของ dataset
 N_SIZES = [10_000, 50_000, 100_000, 200_000, 350_000, 500_000]
 
 # ════════════════════════════════════════════════════════════════════════════
 #  SECTION 2 : GLOBAL PARAMETERS
-#  ค่าคงที่ที่ใช้ร่วมกันทุกระบบ (อ้างอิงจาก paper แต่ละฉบับ)
 # ════════════════════════════════════════════════════════════════════════════
 
-FPR_TARGET          = 0.01    # เป้า FPR ของ Bloom Filter = 1%
-CPABE_OVERHEAD_FRAC = 0.05    # overhead จาก CP-ABE encryption ≈ 5%
-CE_KEY_BYTES        = 256     # ขนาด Convergent Encryption key (256 bytes)
-DUP_REF_BYTES       = 64      # ขนาด reference record สำหรับไฟล์ซ้ำ (64 bytes)
+FPR_TARGET          = 0.01
+CPABE_OVERHEAD_FRAC = 0.05
+CE_KEY_BYTES        = 256
+DUP_REF_BYTES       = 64
 
 # ════════════════════════════════════════════════════════════════════════════
 #  SECTION 3 : UTILITIES
-#  ฟังก์ชันคำนวณพารามิเตอร์ Bloom Filter
 # ════════════════════════════════════════════════════════════════════════════
 
 def bf_params(n_items: int) -> tuple[int, int]:
-    """
-    คำนวณ m (จำนวน bits) และ k (จำนวน hash functions) ของ BF
-    """
-    cap = max(n_items, 1) # ป้องกัน n=0 ที่ทำให้ log(0) ไม่ได้
-    m   = math.ceil(-cap * math.log(FPR_TARGET) / (math.log(2) ** 2)) # จำนวน bits ที่ต้องใช้สำหรับ n_items และ FPR_TARGET
-    k   = max(1, math.ceil((m / cap) * math.log(2))) # จำนวน hash functions ที่เหมาะสมสำหรับ m bits และ n_items
+    cap = max(n_items, 1)
+    m   = math.ceil(-cap * math.log(FPR_TARGET) / (math.log(2) ** 2))
+    k   = max(1, math.ceil((m / cap) * math.log(2)))
     return m, k
 
 def bf_fpr_actual(n_ins: float, m: int, k: int) -> float:
-    """
-    FPR ของ BF เมื่อใส่ n_ins items ลงใน BF ขนาด m bits ใช้ k hash
-    """
     return min((1 - math.exp(-k * max(n_ins, 0.001) / m)) ** k, 1.0)
 
 def cf_fpr(f_bits: int = 12, b_slots: int = 4) -> float:
-    """
-    FPR อ้างอิงจาก TSCF 2021
-    """
     return (2 * b_slots) / (2 ** f_bits)
 
 # ════════════════════════════════════════════════════════════════════════════
-#  SECTION 4 : SDDaaS  (Proposed) 
+#  SECTION 4 : SDDaaS  (Proposed)
 # ════════════════════════════════════════════════════════════════════════════
 
 class SDDaaS:
@@ -88,51 +74,31 @@ class SDDaaS:
 
     @staticmethod
     def _items_per_leaf(n_files: int) -> float:
-        """จำนวน item เฉลี่ยต่อ leaf BF = N / จำนวน partition ทั้งหมด"""
         return max(n_files / N_BF_PARTITIONS, 0.001)
 
     @classmethod
     def _leaf_bf_params(cls, n_files: int) -> tuple[int, int]:
-        """
-        สร้าง BF ที่ capacity = 2× items (margin กันล้น) อย่างน้อย cap = 5 เพื่อเลี่ยง BF ที่เล็กเกิน
-        """
         items = cls._items_per_leaf(n_files)
         cap   = max(int(math.ceil(items) * 2), 5)
         return bf_params(cap)
 
     @classmethod
     def compute_fpr(cls, n_files: int) -> float:
-        """
-        FPR ของ SDDaaS ≈ near-zero เพราะ items/leaf น้อยมาก (≈1.535)
-        เทียบกับ BF ที่ออกแบบรองรับ capacity สูงกว่า
-        """
         items = cls._items_per_leaf(n_files)
         m, k  = cls._leaf_bf_params(n_files)
         return bf_fpr_actual(items, m, k)
 
     @classmethod
     def storage_saved_pct(cls, dup_ratio: float) -> float:
-        """
-        % storage ที่ประหยัดได้ ≈ dup_ratio หักด้วย FPR penalty 
-        @ dup=15.05%: ≈ 15.05%
-        """
         fpr_penalty = cls.compute_fpr(500_000) * 0.01
         return max(dup_ratio - fpr_penalty, 0.0) * 100
 
     @classmethod
     def compute_dedup_eff(cls, n_files: int) -> float:
-        """Dedup efficiency = storage_saved_pct / 100 (constant, independent of N)"""
         return cls.storage_saved_pct(DUP_RATIO) / 100
 
     @classmethod
     def compute_storage_mb(cls, n_files: int) -> float:
-        """
-        Storage (MB):
-          - data_mb   = unique files × size × (1 + CP-ABE overhead)
-          - key_mb    = CE key ต่อ unique file
-          - ref_mb    = duplicate ref records
-          - bf_mb     = BF bits ทุก partition
-        """
         n_unique  = int(n_files * (1 - DUP_RATIO))
         n_dup     = n_files - n_unique
         data_mb   = (n_unique * AVG_FILE_SIZE_KB * (1 + CPABE_OVERHEAD_FRAC)) / 1024
@@ -144,19 +110,13 @@ class SDDaaS:
 
     @classmethod
     def compute_latency_us(cls, n_files: int) -> float:
-        """
-        Latency รวม (µs) — O(1) constant เพราะ hierarchical 3 ระดับ:
-          dept_us + emp_us + ft_us = 3-level tree lookup (ไม่ขึ้นกับ N)
-          bf_us  = BF query ที่ leaf (k hash lookups)
-          meta_us = FPR penalty + metadata fetch
-        """
         _, k    = cls._leaf_bf_params(n_files)
         fpr     = cls.compute_fpr(n_files)
-        dept_us = 0.10                                                  # dept-level lookup
-        emp_us  = 0.10 + 0.001 * math.log2(max(N_CLIENTS_FIXED / N_DEPTS, 2))  # emp-level (log ขนาด dept)
-        ft_us   = 0.05                                                  # file-type lookup
-        bf_us   = 0.30 + k * 0.08                                      # BF query
-        meta_us = fpr * 0.15 + 0.10                                    # metadata + FP handling
+        dept_us = 0.10
+        emp_us  = 0.10 + 0.001 * math.log2(max(N_CLIENTS_FIXED / N_DEPTS, 2))
+        ft_us   = 0.05
+        bf_us   = 0.30 + k * 0.08
+        meta_us = fpr * 0.15 + 0.10
         return dept_us + emp_us + ft_us + bf_us + meta_us
 
 
@@ -182,30 +142,19 @@ class ComparisonSystem(ABC):
 
     @classmethod
     def compute_dedup_eff(cls, n: int) -> float:
-        """Dedup efficiency จาก storage_saved_pct """
         return cls.storage_saved_pct(DUP_RATIO) / 100
 
 
-# ── Li 2016 (Differential Bloom Filter, IEEE ICSESS 2016) ─────────────────
 class Li2016(ComparisonSystem):
-    """
-    แบ่ง BF เป็น 2 ส่วน: Static Content (SC) 87% + Content-Defined Chunking (CDC) 13%
-    น้ำหนักแต่ละส่วน ∝ √(n × cost) → ให้ bits มากขึ้นแก่ส่วนที่แพงกว่า
-    Max dedup efficiency ≈ 18% (จาก Fig.3 ของ paper)
-    @ dup=15.05%: save = min(0.1505 × 0.45, 0.18) × 100 = 6.77%
-    """
     NAME    = "Li 2016 (Diff-BF)"; COLOR = "#E07B39"; MARKER = "o"
-    SC_FRAC = 0.87   # สัดส่วนไฟล์ static content
-    CDC_FRAC = 0.13  # สัดส่วนไฟล์ content-defined chunking
-    Cs = 16.0        # relative cost ของ SC lookup
-    Cc = 1.0         # relative cost ของ CDC lookup
-    MAX_EFF = 0.18   # cap จาก Fig.3 ของ paper
+    SC_FRAC = 0.87
+    CDC_FRAC = 0.13
+    Cs = 16.0
+    Cc = 1.0
+    MAX_EFF = 0.18
 
     @classmethod
     def _split_bf(cls, n: int):
-        """
-        แบ่ง m_total ระหว่าง BF_SC กับ BF_CDC ตามน้ำหนัก w เพื่อให้ FPR ของแต่ละส่วนสมดุลกับ latency cost
-        """
         n_sc  = max(int(n * cls.SC_FRAC), 1)
         n_cdc = max(int(n * cls.CDC_FRAC), 1)
         m_tot = math.ceil(-n * math.log(FPR_TARGET) / (math.log(2) ** 2))
@@ -220,16 +169,12 @@ class Li2016(ComparisonSystem):
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
-        """FPR รวม = weighted average ของ FPR_SC + FPR_CDC"""
         n_sc, n_cdc, m1, m2, k1, k2 = cls._split_bf(n)
         return (cls.SC_FRAC  * bf_fpr_actual(n_sc,  m1, k1) +
                 cls.CDC_FRAC * bf_fpr_actual(n_cdc, m2, k2))
 
     @classmethod
     def storage_saved_pct(cls, dup_ratio: float) -> float:
-        """
-        Algorithm detect ได้ 45% ของ dup @ dup=15.05%
-        """
         return min(dup_ratio * 0.45, cls.MAX_EFF) * 100
 
     @classmethod
@@ -251,27 +196,18 @@ class Li2016(ComparisonSystem):
         return bf_us + ht_us + scan
 
 
-# ── Douceur 2002 (CE + SALAD, IEEE ICDCS 2002) ───────────────────────────
 class Douceur2002(ComparisonSystem):
-    """
-    Convergent Encryption + SALAD (Secure And Liability-free Assured Dedup)
-    ใช้ DHT D=2 ระดับ, λ=2.5 → P_loss = D·e^{-λ} ≈ 16.4%
-    Storage saved = dup_ratio × (1 - P_loss)
-    @ dup=15.05%
-    """
     NAME      = "Douceur 2002 (SALAD)"; COLOR = "#27AE60"; MARKER = "^"
-    D         = 2      # จำนวนระดับของ DHT
-    LAMBDA    = 2.5    # พารามิเตอร์ SALAD (ควบคุม redundancy)
-    REC_BYTES = 36     # ขนาด SALAD record ต่อ item
+    D         = 2
+    LAMBDA    = 2.5
+    REC_BYTES = 36
 
     @classmethod
     def _ploss(cls) -> float:
-        """ความน่าจะเป็นที่ dedup จะพลาด = D·e^{-λ}"""
         return cls.D * math.exp(-cls.LAMBDA)
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
-        """CE ไม่มี false positive (hash-based exact match)"""
         return 0.0
 
     @classmethod
@@ -280,7 +216,6 @@ class Douceur2002(ComparisonSystem):
 
     @classmethod
     def compute_storage_mb(cls, n: int) -> float:
-        """data storage + SALAD routing table (λ records ต่อ item × D levels)"""
         eff      = cls.compute_dedup_eff(n)
         n_unique = int(n * (1 - eff))
         data_mb  = (n_unique * AVG_FILE_SIZE_KB) / 1024
@@ -289,34 +224,21 @@ class Douceur2002(ComparisonSystem):
 
     @classmethod
     def compute_latency_us(cls, n: int) -> float:
-        """
-        SHA hash + DHT hop latency
-        leaf table size ≈ (N/λ)^{1/D} hop cost เพิ่มแบบ sublinear
-        """
         sha_us     = 1.50
         leaf_table = cls.D * cls.LAMBDA * max(1.0, (n / cls.LAMBDA) ** (1.0 / cls.D))
         hop_us     = cls.D * (0.20 + 0.001 * leaf_table)
         return sha_us + hop_us + 0.20
 
 
-# ── Xiong 2019 (SRRS: CE + Role Re-enc + RAT + DCF, IEEE Access 2019) ────
 class Xiong2019(ComparisonSystem):
-    """
-    Secure Role-based Re-encryption Storage (SRRS)
-    ใช้ Role Attribute Tree (RAT) ความลึก log_3(N) + Dynamic Cuckoo Filter (DCF)
-    DCF FPR = 1% (constant), penalty = 3% จาก false positive re-encryption
-    Storage saved = dup_ratio × (1 - 0.03)
-    @ dup=15.05%
-    """
     NAME      = "Xiong 2019 (SRRS)"; COLOR = "#9B59B6"; MARKER = "s"
-    RAT_ORDER = 3      # branching factor ของ Role Attribute Tree
-    DCF_FPR   = 0.01   # DCF false positive rate = 1%
-    RKEY_BITS = 256    # re-encryption key size
-    PENALTY   = 0.03   # efficiency penalty จาก FP re-encryption
+    RAT_ORDER = 3
+    DCF_FPR   = 0.01
+    RKEY_BITS = 256
+    PENALTY   = 0.03
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
-        """DCF FPR คงที่ = 1% ไม่ขึ้นกับ N"""
         return cls.DCF_FPR
 
     @classmethod
@@ -325,7 +247,6 @@ class Xiong2019(ComparisonSystem):
 
     @classmethod
     def compute_storage_mb(cls, n: int) -> float:
-        """data + re-encryption keys (unique files) + DCF structure (1.5× BF bits)"""
         eff      = cls.compute_dedup_eff(n)
         n_unique = int(n * (1 - eff))
         data_mb  = (n_unique * AVG_FILE_SIZE_KB) / 1024
@@ -336,10 +257,6 @@ class Xiong2019(ComparisonSystem):
 
     @classmethod
     def compute_latency_us(cls, n: int) -> float:
-        """
-        RAT traversal O(log_3 N) + DCF query + SHA + re-encryption
-        false positive penalty ∝ DCF_FPR × √N
-        """
         rat_h    = max(1, math.ceil(math.log(max(n, 2)) / math.log(cls.RAT_ORDER)))
         rat_us   = rat_h * cls.RAT_ORDER * 0.15 + 0.10
         _, k_dcf = bf_params(max(int(n * 0.75), 1))
@@ -350,74 +267,56 @@ class Xiong2019(ComparisonSystem):
         return rat_us + dcf_us + sha_us + reenc_us + fp_pen
 
 
-# ── TSCF 2021 (Two-Stage Cuckoo Filter, IEEE MSN 2021) ───────────────────
 class TSCF2021(ComparisonSystem):
-    """
-    Two-Stage Cuckoo Filter: Stage-1 CF (coarse) → Stage-2 CF (fine)
-    FPR คงที่ ≈ 0.195% (f=12 bits, b=4 slots)
-    """
     NAME   = "TSCF 2021 (Two-Stage CF)"; COLOR = "#C0392B"; MARKER = "P"
-    CF_F   = 12  # fingerprint bits
-    CF_B   = 4   # slots per bucket
+    CF_F   = 12
+    CF_B   = 4
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
-        return cf_fpr(cls.CF_F, cls.CF_B)  # = 2×4 / 2^12 ≈ 0.00195
+        return cf_fpr(cls.CF_F, cls.CF_B)
 
     @classmethod
     def storage_saved_pct(cls, dup_ratio: float) -> float:
-        """FPR ต่ำมาก → penalty เล็กน้อย"""
         return max(dup_ratio * (1 - cf_fpr(cls.CF_F, cls.CF_B) * 0.02), 0.0) * 100
 
     @classmethod
     def compute_storage_mb(cls, n: int) -> float:
-        """data + CF bucket storage (m_buckets × b slots × f bits)"""
         eff       = cls.compute_dedup_eff(n)
         n_unique  = int(n * (1 - eff))
         data_mb   = (n_unique * AVG_FILE_SIZE_KB) / 1024
-        m_buckets = math.ceil(n / (cls.CF_B * 0.95))  # load factor 95%
+        m_buckets = math.ceil(n / (cls.CF_B * 0.95))
         cf_mb     = (m_buckets * cls.CF_B * cls.CF_F) / (8 * 1024 * 1024)
         return data_mb + cf_mb
 
     @classmethod
     def compute_latency_us(cls, n: int) -> float:
-        """SHA hash + 2-stage CF lookup O(1) + index O(log N) + FP penalty"""
         sha_us   = 1.50
-        cf_us    = 0.25 + 2 * (cls.CF_B * 0.03)   # 2 stages
+        cf_us    = 0.25 + 2 * (cls.CF_B * 0.03)
         index_us = 0.30 + 0.10 * math.log2(max(n, 2))
         fp_pen   = cls.compute_fpr(n) * 0.008 * math.sqrt(max(n, 1))
         return sha_us + cf_us + index_us + fp_pen
 
 
-# ── FCDedup 2023 (Two-Level Fog+Cloud Dedup, IEEE TPDS 2023) ─────────────
 class FCDedup2023(ComparisonSystem):
-    """
-    Two-Level Dedup: Fog node (edge dedup) + Cloud (global dedup)
-    ใช้ short hash (10-bit) แบ่ง namespace  N_collisions = N / 2^10
-    FPR = exact hash matching latency เพิ่มแบบ linear ตาม N_collisions
-    """
     NAME            = "FCDedup 2023 (Fog+Cloud)"; COLOR = "#795548"; MARKER = "X"
-    SHORT_HASH_BITS = 10  # bits ของ short hash สำหรับ namespace partition
-    N_FOG           = 4   # จำนวน fog node
+    SHORT_HASH_BITS = 10
+    N_FOG           = 4
 
     @classmethod
     def _nocn(cls, n: int) -> float:
-        """จำนวน collision เฉลี่ยต่อ namespace bucket = N / 2^BITS"""
         return max(1.0, n / (2 ** cls.SHORT_HASH_BITS))
 
     @classmethod
     def compute_fpr(cls, n: int) -> float:
-        """Exact matching → ไม่มี false positive"""
         return 0.0
 
     @classmethod
     def storage_saved_pct(cls, dup_ratio: float) -> float:
-        """Dedup สมบูรณ์ = dup_ratio เต็มๆ"""
         return dup_ratio * 100
 
     @classmethod
     def compute_storage_mb(cls, n: int) -> float:
-        """data + cloud metadata (100 bytes/file) + fog metadata (64 bytes × N_FOG)"""
         eff           = cls.compute_dedup_eff(n)
         n_unique      = int(n * (1 - eff))
         data_mb       = (n_unique * AVG_FILE_SIZE_KB) / 1024
@@ -427,12 +326,8 @@ class FCDedup2023(ComparisonSystem):
 
     @classmethod
     def compute_latency_us(cls, n: int) -> float:
-        """
-        Latency เพิ่มแบบ O(N_collision) เพราะต้อง scan bucket เมื่อ collision สูง
-        fog lookup + cloud lookup + collision scan + verification
-        """
         nocn = cls._nocn(n)
-        return 0.60 + 0.80 + nocn * 0.65 + nocn * 0.15  # linear ใน N_collisions
+        return 0.60 + 0.80 + nocn * 0.65 + nocn * 0.15
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -460,7 +355,6 @@ NS      = N_SIZES
 METRICS = ("fpr", "storage_mb", "latency_us", "dedup_eff")
 
 def _scale(m: str, v: float) -> float:
-    """แปลง fpr / dedup_eff เป็น % """
     return v * 100 if m in ("fpr", "dedup_eff") else v
 
 def build_results(cls_or_dict):
@@ -478,7 +372,6 @@ res_sd = build_results(SDDaaS)
 res_6  = build_results(SYSTEMS_6)
 res_4  = build_results(SYSTEMS_4)
 
-# รวมทุกระบบไว้ใน data dict 
 SYS_CLS = {
     "li2016"    : Li2016,
     "douceur"   : Douceur2002,
@@ -521,7 +414,6 @@ print_table("TABLE IV — Deduplication Efficiency (%)  [higher=better]  | 4 Sys
 #  SECTION 9 : GRAPH 4 DATA
 # ════════════════════════════════════════════════════════════════════════════
 
-# DUP_RATIO (0.1505)
 DUP_RANGE = sorted(set(
     [x / 100 for x in range(5, 82, 5)] + [DUP_RATIO]
 ))
@@ -646,7 +538,7 @@ ax2.annotate(
 # ── Graph 3: False Positive Rate (%) ───────────────────────────
 for k in ["li2016","douceur","xiong2019"]:
     Cls = SYS_CLS[k]
-    ls  = "--" if k == "douceur" else "-" 
+    ls  = "--" if k == "douceur" else "-"
     ax3.plot(NS, data[k]["fpr"],
              marker=Cls.MARKER, color=Cls.COLOR,
              linewidth=1.8, markersize=5.5, linestyle=ls, label=Cls.NAME)
@@ -676,7 +568,7 @@ ax3.annotate(
     fontsize=7.0, color=Xiong2019.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Xiong2019.COLOR), bbox=BBOX["xi"])
 
-# ── Graph 4: Storage Saved (%) vs Duplication Ratio ─────────────────────
+# ── Graph 4: Storage Saved (%) vs Duplication Ratio ──────────────────────
 for key, Cls in [("li2016",Li2016),("douceur",Douceur2002),("xiong2019",Xiong2019)]:
     ax4.plot(dup_pct, g4[key],
              marker=Cls.MARKER, color=Cls.COLOR,
@@ -717,9 +609,9 @@ ax4.annotate(
     fontsize=7.0, color=Li2016.COLOR, ha="center",
     arrowprops=dict(**ARR, color=Li2016.COLOR), bbox=BBOX["li"])
 
-plt.savefig("sddaas_v8.png", dpi=150, bbox_inches="tight",
+plt.savefig("sddaas_graph.png", dpi=150, bbox_inches="tight",
             facecolor=fig.get_facecolor())
-print("[Output] Graph saved → sddaas_v8.png")
+print("[Output] Graph saved → sddaas_graph.png")
 plt.show()
 plt.close()
 print("[Done]")
