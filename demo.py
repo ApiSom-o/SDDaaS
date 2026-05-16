@@ -1530,7 +1530,6 @@ select:focus {
    <div class="result" id="result-box">
      <div class="result-head" id="r-head"></div>
      <div class="result-sub"  id="r-sub"></div>
-     <div class="perf-row"    id="r-perf"></div>
      <div id="r-detail"></div>
    </div>
  </div>
@@ -1826,13 +1825,6 @@ function showSingle(data, rtt) {
    : '"' + data.filename + '" hashed + inserted into BF and Metadata on server'
 
 
- document.getElementById('r-perf').innerHTML =
-   mkpb(rtt + ' ms', 'Round Trip', 'p-g') +
-   mkpb((data.total_us||'\u2014') + ' \xb5s', 'Server Total', 'p-b') +
-   mkpb((data.bf_us||'\u2014') + ' \xb5s', 'Bloom Filter', 'p-o') +
-   mkpb((data.meta_us||'\u2014') + ' \xb5s', 'Metadata', 'p-p')
-
-
  var sc = {info:'s-info', new:'s-new', warn:'s-warn', dup:'s-dup'}
  document.getElementById('r-detail').innerHTML =
    '<div class="hash-box">SHA-256: ' + (data.hash||'') + '</div>' +
@@ -1875,14 +1867,6 @@ function showBatch(data, rtt) {
  document.getElementById('r-sub').textContent =
    'Space saved: ' + fmt(data.saved_bytes) + ' \u2014 duplicate rate: ' +
    Math.round(nDup/n*100) + '%'
-
-
- document.getElementById('r-perf').innerHTML =
-   mkpb(rtt + ' ms', 'Total RTT', 'p-g') +
-   mkpb(data.server_ms + ' ms', 'Server Process', 'p-b') +
-   mkpb(data.avg_hash_us + ' \xb5s', 'Avg Hash/File', 'p-o') +
-   mkpb(data.avg_bf_us + ' \xb5s', 'Avg BF/File', 'p-p') +
-   mkpb('1', 'HTTP Request', 'p-r')
 
 
  var rows = data.results||[]
