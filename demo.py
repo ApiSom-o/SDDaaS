@@ -1448,6 +1448,9 @@ select:focus {
  <div class="sc-div"></div>
  <div class="sc"><div class="sc-num" id="sc-entries" style="color:var(--purple)">—</div><div class="sc-lbl">Total BF Entries</div></div>
  <div class="sc-div"></div>
+ <div class="sc"><div class="sc-num" id="sc-used" style="color:var(--accent2)">—</div><div class="sc-lbl">Storage Used</div></div>
+ <div class="sc-div"></div>
+ <div class="sc"><div class="sc-num" id="sc-ms" style="color:var(--warn)">—</div><div class="sc-lbl">Seed Time</div></div>
 </div>
 
 
@@ -1872,7 +1875,16 @@ function showBatch(data, rtt) {
  document.getElementById('r-sub').textContent =
    'Space saved: ' + fmt(data.saved_bytes) + ' \u2014 duplicate rate: ' +
    Math.round(nDup/n*100) + '%'
- 
+
+
+ document.getElementById('r-perf').innerHTML =
+   mkpb(rtt + ' ms', 'Total RTT', 'p-g') +
+   mkpb(data.server_ms + ' ms', 'Server Process', 'p-b') +
+   mkpb(data.avg_hash_us + ' \xb5s', 'Avg Hash/File', 'p-o') +
+   mkpb(data.avg_bf_us + ' \xb5s', 'Avg BF/File', 'p-p') +
+   mkpb('1', 'HTTP Request', 'p-r')
+
+
  var rows = data.results||[]
  document.getElementById('r-detail').innerHTML =
    '<div class="bsumgrid">' +
