@@ -76,67 +76,74 @@ SDDaaS/
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Requirements
 
-### Requirements
-- Python **3.9+**
-- pip
-
-### Install dependencies
-```bash
-pip install -r requirements.txt
-```
+- Python **3.9+** — check with `python3 --version`
+- pip — check with `pip3 --version`
+- Git — check with `git --version`
 
 ---
 
-## 🚀 How to Run
+## 🚀 How to Run (Step-by-Step)
 
-### 1. Interactive Web Demo (`experiments/demo.py`)
+### Step 1 — Clone the repository
 
-Demonstrates the full SDDaaS deduplication pipeline with a browser-based UI.
+```bash
+git clone https://github.com/ApiSom-o/SDDaaS.git
+```
+
+### Step 2 — Enter the project folder
+
+```bash
+cd SDDaaS
+```
+
+### Step 3 — Install dependencies
+
+```bash
+pip3 install -r requirements.txt
+```
+
+### Step 4 — Enter the experiments folder
 
 ```bash
 cd experiments
-python demo.py
 ```
 
-> Browser opens automatically at `http://localhost:8765`
-> The demo reads `../data/dataset.csv` to seed the Bloom Filter tree on startup.
+> ⚠️ **All scripts must be run from inside the `experiments/` folder** so they can correctly locate the datasets in `../data/`
 
-**What the demo supports:**
+---
+
+### Step 5 — Run the scripts
+
+**▶ Demo (Interactive Web UI)**
+```bash
+python3 demo.py
+```
+Browser opens automatically at `http://localhost:8765`
 
 | Mode | Description |
 |------|-------------|
-| **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter check → Metadata exact-match verification |
-| **Batch upload** | Browser identity-hashes each file (filename+size via SubtleCrypto), sends JSON to server, BF checks all in one request |
-| **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicate hashes in-memory — no real files needed |
+| **Single file upload** | Shows full 3-step pipeline: Tree Routing → Bloom Filter check → Metadata exact-match |
+| **Batch upload** | Hashes multiple files instantly, sends JSON to server, BF checks all at once |
+| **Simulate 5,000 files** | Auto-generates 4,500 unique + 500 duplicates in-memory, no real files needed |
 
 ---
 
-### 2. Comparison Benchmark (`experiments/compare.py`)
-
-Simulates and compares SDDaaS against **5 related works** across 4 performance metrics.
-All baseline systems are simulated from their published algorithmic designs and mathematical models (source code for baselines was unavailable; see paper Section IV-A).
-
+**▶ Comparison Benchmark (Graphs)**
 ```bash
-cd experiments
-python compare.py
+python3 compare.py
 ```
+Prints 4 comparison tables and saves **`sddaas_v8.png`**
 
-**Output:**
-- Prints 4 comparison tables to the terminal
-- Saves **`sddaas_v8.png`** — a 2×2 figure with all 4 graphs
-
-**Graphs generated:**
-
-| Graph | Metric | Systems compared |
-|-------|--------|-----------------|
-| Graph 1 | Search Latency (µs) — lower is better | All 6 systems |
+| Graph | Metric | Systems |
+|-------|--------|---------|
+| Graph 1 | Search Latency (µs) — lower is better | 6 systems |
 | Graph 2 | Storage Used (MB) — lower is better | 4 systems |
 | Graph 3 | False Positive Rate (%) — lower is better | 4 systems |
 | Graph 4 | Storage Saved (%) vs Duplication Ratio — higher is better | 4 systems |
 
-**Baseline systems implemented inside `compare.py`:**
+Baseline systems simulated inside `compare.py`:
 
 | Class | Paper |
 |-------|-------|
@@ -148,17 +155,11 @@ python compare.py
 
 ---
 
-### 3. Generate Unique Test Dataset (`experiments/generate_test_dataset.py`)
-
-Creates 5,000 synthetic PDF files each with unique content (unique SHA-256 hash).
-Used to verify the deduplication engine detects **zero** false duplicates on a fully unique dataset.
-
+**▶ Generate Unique Test Dataset (optional)**
 ```bash
-cd experiments
-python generate_test_dataset.py
+python3 generate_test_dataset.py
 ```
-
-**Output:** Creates `Unique_Test_Dataset/` folder with `document_0001.pdf` … `document_5000.pdf`
+Creates `Unique_Test_Dataset/` folder with 5,000 unique PDF files (each with a unique SHA-256 hash) to verify the engine detects zero false duplicates on a fully unique dataset.
 
 ---
 
