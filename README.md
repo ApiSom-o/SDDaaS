@@ -150,7 +150,7 @@ Browser opens automatically at `http://localhost:8765`
 ```bash
 python3 compare.py
 ```
-Prints 4 comparison tables and saves **`sddaas_v8.png`**
+Prints 4 comparison tables and saves **`sddaas_graph.png`**
 
 | Graph | Metric | Systems |
 |-------|--------|---------|
