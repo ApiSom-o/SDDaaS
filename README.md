@@ -38,20 +38,18 @@
 SDDaaS/
 ├── README.md
 ├── requirements.txt
-├── experiments/
-│   ├── demo.py                  # Web demo server (SDDaaS engine + interactive UI)
-│   ├── compare.py               # Simulation & comparison vs 5 related works
-│   └── generate_test_dataset.py # Script to generate 5,000 unique test PDF files
-└── data/
-    ├── dataset.csv              # Dataset 1 — 50,000 employees (Emp_ID, Dept_ID)
-    └── secure_dedup_50k.csv     # Dataset 2 — 500,000 file upload records
+├── demo.py                  # Web demo server (SDDaaS engine + interactive UI)
+├── compare.py               # Simulation & comparison vs 5 related works
+├── generate_test_dataset.py # Script to generate 5,000 unique test PDF files
+├── dataset.csv              # Dataset 1 — 50,000 employees (Emp_ID, Dept_ID)
+└── secure_dedup_50k.csv     # Dataset 2 — 500,000 file upload records
 ```
 
 ---
 
 ## 📊 Datasets
 
-### `data/dataset.csv` — Employee Registry
+### `dataset.csv` — Employee Registry
 | Column | Description |
 |--------|-------------|
 | `Emp_ID` | Employee ID (E00001 – E50000) |
@@ -60,7 +58,7 @@ SDDaaS/
 - **50,000 employees** across **20 departments**
 - Used by `demo.py` to seed the Bloom Filter tree at startup
 
-### `data/secure_dedup_50k.csv` — File Upload Records
+### `secure_dedup_50k.csv` — File Upload Records
 | Column | Description |
 |--------|-------------|
 | `Emp_ID` | Employee ID |
@@ -100,20 +98,25 @@ cd SDDaaS
 
 ### Step 3 — Verify datasets are present
 
-The datasets are included in the repository and will be downloaded automatically when you clone.
-Check that both files exist inside the `data/` folder:
+The datasets are included in the repository and downloaded automatically when you clone.
+Check that both files exist:
 
 ```bash
-ls data/
+ls
 ```
 
 You should see:
 ```
-dataset.csv           ← 50,000 employees (required by demo.py)
-secure_dedup_50k.csv  ← 500,000 file records (required by compare.py)
+dataset.csv           ← required by demo.py
+secure_dedup_50k.csv  ← required by compare.py
+demo.py
+compare.py
+generate_test_dataset.py
+requirements.txt
+README.md
 ```
 
-> ⚠️ **Both files must exist before running any script.** If `data/` is empty or missing files, re-clone the repository.
+> ⚠️ **Both CSV files must exist before running any script.** If missing, re-clone the repository.
 
 ### Step 4 — Install dependencies
 
@@ -121,13 +124,9 @@ secure_dedup_50k.csv  ← 500,000 file records (required by compare.py)
 pip3 install -r requirements.txt
 ```
 
-### Step 5 — Enter the experiments folder
+### Step 5 — Run the scripts
 
-```bash
-cd experiments
-```
-
-> ⚠️ **All scripts must be run from inside the `experiments/` folder** so they can correctly locate the datasets in `../data/`
+> All scripts are run directly from the `SDDaaS/` folder
 
 ---
 
