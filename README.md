@@ -1,6 +1,6 @@
 # SDDaaS — Secure Data Deduplication-as-a-Service Using Search Tree and Bloom Filter
 
-> **CSS451-454 Term Project | School of ICT, SIIT, Thammasat University**
+> **CSS451-454 Term Project |SIIT, Thammasat University**
 
 ---
 
