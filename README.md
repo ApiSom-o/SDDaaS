@@ -98,13 +98,30 @@ git clone https://github.com/ApiSom-o/SDDaaS.git
 cd SDDaaS
 ```
 
-### Step 3 — Install dependencies
+### Step 3 — Verify datasets are present
+
+The datasets are included in the repository and will be downloaded automatically when you clone.
+Check that both files exist inside the `data/` folder:
+
+```bash
+ls data/
+```
+
+You should see:
+```
+dataset.csv           ← 50,000 employees (required by demo.py)
+secure_dedup_50k.csv  ← 500,000 file records (required by compare.py)
+```
+
+> ⚠️ **Both files must exist before running any script.** If `data/` is empty or missing files, re-clone the repository.
+
+### Step 4 — Install dependencies
 
 ```bash
 pip3 install -r requirements.txt
 ```
 
-### Step 4 — Enter the experiments folder
+### Step 5 — Enter the experiments folder
 
 ```bash
 cd experiments
