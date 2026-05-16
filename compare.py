@@ -1,4 +1,5 @@
 import math
+import os
 import pandas as pd
 import matplotlib
 import os
@@ -13,7 +14,8 @@ from abc import ABC, abstractmethod
 #  SECTION 1 : LOAD DATASET
 # ════════════════════════════════════════════════════════════════════════════
 
-df = pd.read_csv("secure_dedup_50k.csv")
+_DIR = os.path.dirname(os.path.abspath(__file__))
+df = pd.read_csv(os.path.join(_DIR, "secure_dedup_50k.csv"))
 
 N_CLIENTS_FIXED  = df["Emp_ID"].nunique()
 N_DEPTS          = df["Dept_ID"].nunique()
