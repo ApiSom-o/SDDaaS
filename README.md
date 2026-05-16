@@ -149,7 +149,7 @@ Browser opens automatically at `http://localhost:8765`
 
 ---
 
-**▶ Comparison Benchmark — 4 Graphs** *(macOS only)*
+**▶ Comparison Benchmark — 4 Graphs**
 
 ```bash
 python3 compare.py
@@ -159,6 +159,28 @@ python3 compare.py
 - Prints 4 comparison tables to the terminal
 - Saves **`sddaas_graph.png`** in the same folder as `compare.py`
 - Opens the graph automatically after saving
+
+> ⚠️ **Windows users:** `compare.py` uses `matplotlib.use('MacOSX')` and `subprocess.run(["open", ...])` which are macOS-specific. Before running, open `compare.py` and make these two changes:
+>
+> **Change 1** — find this line near the top:
+> ```python
+> matplotlib.use('MacOSX')
+> ```
+> Replace with:
+> ```python
+> matplotlib.use('Agg')
+> ```
+>
+> **Change 2** — find this line near the bottom:
+> ```python
+> subprocess.run(["open", out_path])
+> ```
+> Replace with:
+> ```python
+> os.startfile(out_path)
+> ```
+>
+> Then run normally. The graph will be saved as `sddaas_graph.png` and open automatically.
 
 | Graph | Metric | Systems |
 |-------|--------|---------|
