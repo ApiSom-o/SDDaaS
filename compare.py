@@ -1,15 +1,10 @@
 import math
 import pandas as pd
 import matplotlib
+import os
+os.environ.setdefault('MPLBACKEND', 'Agg')
+matplotlib.use(os.environ.get('MPLBACKEND', 'Agg'))  # เปลี่ยนเป็น 'Agg' ถ้า run บน server ที่ไม่มี display
 import matplotlib.pyplot as plt
-# ── Auto-select backend (works on Mac, Linux, Windows, headless servers) ──
-try:
-    plt.switch_backend("TkAgg")
-except Exception:
-    try:
-        plt.switch_backend("Qt5Agg")
-    except Exception:
-        matplotlib.use("Agg")  # fallback: บันทึกไฟล์โดยไม่เปิด window
 import matplotlib.gridspec as gridspec
 from tabulate import tabulate
 from abc import ABC, abstractmethod
@@ -18,10 +13,7 @@ from abc import ABC, abstractmethod
 #  SECTION 1 : LOAD DATASET
 # ════════════════════════════════════════════════════════════════════════════
 
-import os as _os
-_HERE = _os.path.dirname(_os.path.abspath(__file__))
-_CSV  = _os.path.join(_HERE, "..", "data", "secure_dedup_50k.csv")
-df = pd.read_csv(_CSV)
+df = pd.read_csv("secure_dedup_50k.csv")
 
 N_CLIENTS_FIXED  = df["Emp_ID"].nunique()       # จำนวน client ทั้งหมด = 50,000
 N_DEPTS          = df["Dept_ID"].nunique()       # จำนวน department = 20

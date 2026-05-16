@@ -1,191 +1,163 @@
-# SDDaaS — Secure Data Deduplication-as-a-Service
+# SDDaaS — Secure Deduplication as a Service
 
-**CSS451/CSS454 Term Project** | Sirindhorn International Institute of Technology (SIIT), Thammasat University | 2025
-
-> Perabha Roiampaeng · Korapin Na Songkhla · Apisara Kocharoenkiat · Wanitcha Saengbundit  
-> Supervised by Asst. Prof. Somchart Fugkaew, School of ICT, SIIT
+> **Bloom Filter–based Secure Deduplication System for Cloud Storage**
+> A research prototype implementing hierarchical Bloom Filter deduplication with CP-ABE encryption support.
 
 ---
 
-## Overview
+## 📌 Project Overview
 
-SDDaaS proposes a **Secure Data Deduplication-as-a-Service** architecture for multi-tenant cloud storage combining:
+**SDDaaS** (Secure Deduplication as a Service) is a cloud-storage deduplication system that uses a **3-level hierarchical Search Tree** (Department → Employee → File Type) combined with **Bloom Filters** to detect duplicate files with near-zero false positive rates while preserving data privacy through Convergent Encryption (CE) and CP-ABE overhead modeling.
 
-- **Convergent Encryption (CE)** — derives a deterministic AES-256 key from `SHA-256(plaintext)`, enabling deduplication on encrypted data
-- **CP-ABE** — wraps the convergent key under a user-defined access policy for fine-grained access control
-- **Bloom Filters** — one dedicated filter per `(Client ID × File Type)` leaf node, achieving O(1) duplicate screening with near-zero false positives
-- **Search Tree** — routes each query through `Root → Department → Client → File Type` before any Bloom filter probe, achieving constant-time search regardless of dataset size
+### Key Features
+- ✅ **O(1) 3-level tree routing** — no full scan across 50,000 clients
+- ✅ **Partitioned Bloom Filters** — 500,000 independent BF partitions (50K clients × 10 file types)
+- ✅ **Near-zero FPR** — items/leaf ≈ 1.5, far below BF capacity
+- ✅ **Instant batch deduplication** — browser pre-hashes via SubtleCrypto, sends JSON only
+- ✅ **Interactive web demo** — built-in HTTP server, no external framework required
 
 ---
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```
 SDDaaS/
-├── README.md
-├── requirements.txt
-├── .gitignore
-│
-├── data/
-│   ├── secure_dedup_50k.csv    # Main simulation dataset (500,000 records)
-│   └── dataset.csv             # Employee–Department mapping (50,000 employees × 20 depts)
-│
-└── experiments/
-    ├── SDDaaS_Comparison.py    # Experiment: SDDaaS vs 5 related-work systems (paper Section IV)
-    └── SDDaaS_Demo.py          # Experiment: Interactive demo with local web UI
+├── demo.py                  # Web demo server (SDDaaS engine + HTTP UI)
+├── compare.py               # Performance comparison vs 5 related works
+├── generate_test_dataset.py # Script to generate 5,000 unique test PDF files
+├── dataset.csv              # Dataset 1 — 50,000 employees (Emp_ID, Dept_ID)
+├── secure_dedup_50k.csv     # Dataset 2 — 500,000 file upload records
+├── requirements.txt         # Python dependencies
+└── README.md
 ```
 
 ---
 
-## Dataset Description
+## 📊 Datasets
 
-### `data/secure_dedup_50k.csv` — Main Simulation Dataset
-
-| Column | Type | Description |
-|---|---|---|
-| `Emp_ID` | string | Employee (Client) ID — 50,000 unique clients |
-| `Dept_ID` | string | Department ID — 20 departments |
-| `File_Type` | string | File category (Database, Image, PDF, Document, SourceCode, Archive, Presentation, Spreadsheet, Log, Video) |
-| `File_Size_KB` | int | File size in KB (range: 50–10,000 KB, avg: 5,022 KB) |
-| `File_Hash` | string | SHA-256 fingerprint of the file |
-| `Upload_Date` | date | Upload timestamp |
-| `Is_Duplicate` | bool | Ground-truth duplicate label |
-
-**Key statistics (match Table I in the paper):**
-
-| Parameter | Value |
-|---|---|
-| Total records | 500,000 |
-| Unique clients | 50,000 |
-| Departments | 20 |
-| File types | 10 |
-| Duplicate ratio | 15.05% (75,246 duplicates) |
-| Bloom Filter partitions | 500,000 (one per client–file-type leaf) |
-
-### `data/dataset.csv` — Employee–Department Mapping
-
+### `dataset.csv` — Employee Registry
 | Column | Description |
-|---|---|
+|--------|-------------|
 | `Emp_ID` | Employee ID (E00001 – E50000) |
 | `Dept_ID` | Department ID (D01 – D20) |
 
-Used by `SDDaaS_Demo.py` to seed the interactive demo with realistic department structure.
+- **50,000 employees** across **20 departments**
+- Used by `demo.py` to seed the Bloom Filter tree
+
+### `secure_dedup_50k.csv` — File Upload Records
+| Column | Description |
+|--------|-------------|
+| `Emp_ID` | Employee ID |
+| `Dept_ID` | Department ID |
+| `File_Type` | One of 10 types (PDF, Image, Code, Video, …) |
+| `File_Size_KB` | File size in KB |
+| `File_Hash` | SHA-256 hash (truncated) |
+| `Upload_Date` | Upload timestamp |
+| `Is_Duplicate` | Boolean duplicate flag |
+
+- **500,000 records** | Duplicate ratio ≈ **15.05%** | Avg file size ≈ **5,022 KB**
+- Used by `compare.py` for benchmark calculations
 
 ---
 
-## Installation
+## 🚀 Quick Start
 
-Requires **Python 3.10 or later**.
-
+### 1. Install dependencies
 ```bash
-git clone https://github.com/ApiSom-o/SDDaaS.git
-cd SDDaaS
 pip install -r requirements.txt
 ```
 
-Dependencies: `matplotlib`, `pandas`, `tabulate`  
-All other imports (`math`, `hashlib`, `http.server`, etc.) are Python standard library — no additional installation needed.
-
----
-
-## How to Run
-
-### Experiment 1 — SDDaaS vs Related Works
-
-**File:** `experiments/SDDaaS_Comparison.py`
-
-This script reproduces the four evaluation graphs from **Section IV** of the paper:
-
-| Graph | Metric | Systems compared |
-|---|---|---|
-| Graph 1 | Search Latency (µs) | All 6 systems (lower is better) |
-| Graph 2 | Storage Used (MB) | 4 systems (lower is better) |
-| Graph 3 | False Positive Rate (%) | 4 systems (lower is better) |
-| Graph 4 | Storage Saved (%) vs duplicate ratio | 4 systems (higher is better) |
-
+### 2. Run the interactive web demo
 ```bash
-cd experiments
-python3 SDDaaS_Comparison.py
+python demo.py
 ```
+Browser will open automatically at `http://localhost:8765`
 
-**Expected output:**
-- Terminal: dataset summary + 4 result tables matching Tables II–V in the paper
-- File saved: `experiments/sddaas_v8.png` — all 4 graphs combined into one figure
+The demo supports:
+- **Single file upload** → shows 3-step Bloom Filter pipeline (routing → BF check → metadata verify)
+- **Batch upload** → browser identity-hashes files (filename+size), sends JSON, instant result
+- **Simulate 5,000 files** → generates 4,500 unique + 500 duplicates in-memory, no disk read
 
-**Scale points tested:** 10K, 50K, 100K, 200K, 350K, 500K files  
-**Runtime:** approx. 10–30 seconds
-
----
-
-### Experiment 2 — Interactive Demo
-
-**File:** `experiments/SDDaaS_Demo.py`
-
-Launches a local web server that simulates the full SDDaaS pipeline step-by-step.
-
+### 3. Run the comparison benchmark
 ```bash
-cd experiments
-python3 SDDaaS_Demo.py
+python compare.py
 ```
+Generates 4 graphs comparing SDDaaS vs 5 related works across 10K–500K files:
+- Graph 1: Search Latency (µs)
+- Graph 2: Storage Used (MB)
+- Graph 3: False Positive Rate (%)
+- Graph 4: Storage Saved (%) vs Duplication Ratio
 
-**Expected output:**
-- Terminal prints the local server address (e.g. `http://localhost:8080`)
-- Browser opens automatically
-- In the UI: select Department and Employee → upload any file → observe the full pipeline (Tree routing → Bloom Filter bit-array probe → Metadata Index fallback → result)
+Output: `sddaas_v8.png`
 
-Press **`Ctrl+C`** in the terminal to stop the server.
-
-> The demo pre-seeds **5,003 entries per client** (3 real file hashes + 5,000 random hashes) to simulate realistic 500,000-partition scale.
+### 4. Generate unique test dataset (optional)
+```bash
+python generate_test_dataset.py
+```
+Creates `Unique_Test_Dataset/` folder with **5,000 unique PDF files** (each has unique content → unique SHA-256 hash). Used to verify the deduplication engine detects zero false duplicates on a truly unique dataset.
 
 ---
 
-## Related Work Simulation Methodology
+## 🔬 System Architecture
 
-> As stated in the paper (Section IV): *"All baseline systems were simulated from their published algorithmic designs and mathematical complexity models, as original source code was unavailable."*
-
-`SDDaaS_Comparison.py` implements each baseline as a Python class derived from a common abstract base (`ComparisonSystem`). Each class models latency, storage, FPR, and deduplication efficiency using mathematics from the respective papers:
-
-| Class | System | Source | Key model |
-|---|---|---|---|
-| `Li2016` | Differential Bloom Filter | Z. Li et al., IEEE ICSESS 2016 | Two BFs (SC + CDC); capacity factor 0.70; FPR weighted by chunk ratio (87%/13%) |
-| `Douceur2002` | CE + SALAD | J. R. Douceur et al., IEEE ICDCS 2002 | Exact content-hash via DHT; FPR = 0%; latency scales O(n) |
-| `Xiong2019` | SRRS (RAT + DCF) | H. Xiong et al., IEEE Access 2019 | B⁺-tree RAT (order 3) + Dynamic Count Filter; DCF FPR = BF × 1.10; latency O(log n) |
-| `TSCF2021` | Two-Stage Cuckoo Filter | J. Liu et al., IEEE MSN 2021 | 12-bit fingerprint, 4 slots/bucket; FPR = 2b/2^f; latency O(log n) |
-| `FCDedup2023` | Fog+Cloud Two-Level Dedup | J. Song et al., IEEE TPDS 2023 | Bilinear pairing; latency O(n) at rate n/1,024 per query |
-| `SDDaaS` | **This work** | — | Partitioned BF (N/500,000 items/leaf); O(1) latency; 3-layer FPR mitigation |
-
-All parameters (FPR target, CP-ABE overhead, CE key size, duplicate reference size) are defined as named constants at the top of `SDDaaS_Comparison.py` for full reproducibility.
+```
+Upload Request
+     │
+     ▼
+[3-Level Search Tree]
+  Root → Dept (D01–D20) → Emp (E00001–E50000) → FileType (10 types)
+     │
+     ▼
+[Bloom Filter @ Leaf]
+  capacity = 2 × avg_items | FPR target = 1%
+  items/leaf ≈ 1.5  →  actual FPR ≈ near-zero
+     │
+  BF miss → NEW FILE → insert BF + Metadata → store ciphertext
+  BF hit  → check Metadata
+               │
+               exact match → DUPLICATE → store 64-byte reference only
+               no match    → false positive → treat as new
+```
 
 ---
 
-## System Design Summary
+## 📈 Comparison Benchmarks
 
-Five-phase pipeline (paper Section III-B):
+Systems compared (at N = 500,000 files, dup_ratio = 15.05%):
 
-```
-Phase 1: File Upload     Client → TLS/SSL → SDDaaS Gateway
-Phase 2: Encryption      K = SHA-256(M) | CT = AES-256(K,M) | CTK = CP-ABE(PK,K,T)
-Phase 3: Indexing        Metadata Index built; {CT,CTK} sent to Cloud Storage
-Phase 4: Deduplication   Tree routing (Dept→Client→FileType) → Bloom Filter probe
-                          → if "probably duplicate": deterministic Metadata Index fallback
-Phase 5: Update/Return   New file: store CT+CTK, insert into BF+tree
-                          Duplicate: record 64-byte reference only
-```
-
-**Key guarantees:**
-- **No false negatives** — Layer 3 deterministic fallback ensures no true duplicate is missed
-- **Near-zero FPR** — partitioned BF keeps per-leaf load ≈ 1.5 items at N = 500K (FPR < 0.0001%)
-- **O(1) search** — hierarchical routing bounds every query to one leaf before BF probe
+| System | Latency (µs) | FPR (%) | Dedup Eff. |
+|--------|-------------|---------|------------|
+| **SDDaaS (Proposed)** | **~0.87** | **~0.000%** | **15.05%** |
+| Li 2016 (Diff-BF) | ~4.8 | ~0.98% | 6.77% |
+| Douceur 2002 (SALAD) | ~4.2 | 0.00% | 12.52% |
+| Xiong 2019 (SRRS) | ~12.3 | 1.00% | 14.60% |
+| TSCF 2021 (Two-Stage CF) | ~3.8 | 0.20% | 15.02% |
+| FCDedup 2023 (Fog+Cloud) | ~322 | 0.00% | 15.05% |
 
 ---
 
-## Authors
+## 📦 Requirements
 
-| Name | Student ID | Email |
-|---|---|---|
-| Perabha Roiampaeng | 6622770533 | 6622770533@g.siit.tu.ac.th |
-| Korapin Na Songkhla | 6622771499 | 6622771499@g.siit.tu.ac.th |
-| Apisara Kocharoenkiat | 6622772695 | 6622772695@g.siit.tu.ac.th |
-| Wanitcha Saengbundit | 6622780631 | 6622780631@g.siit.tu.ac.th |
+```
+pandas>=1.5.0
+matplotlib>=3.5.0
+tabulate>=0.9.0
+```
 
-**Supervisor:** Asst. Prof. Somchart Fugkaew — somchart@siit.tu.ac.th
+See `requirements.txt` for exact versions.
+
+---
+
+## 📄 References
+
+1. Li et al. (2016). *Differential Bloom Filter for Secure Deduplication.* IEEE ICSESS 2016.
+2. Douceur et al. (2002). *Reclaiming Space from Duplicate Files in a Serverless Distributed File System (SALAD).* IEEE ICDCS 2002.
+3. Xiong et al. (2019). *Secure Role-based Re-encryption Storage (SRRS).* IEEE Access 2019.
+4. Two-Stage Cuckoo Filter (TSCF). IEEE MSN 2021.
+5. FCDedup — Two-Level Fog+Cloud Deduplication. IEEE TPDS 2023.
+
+---
+
+## 👤 Author
+
+**ApiSom** — Computer Engineering / Information Technology Research
