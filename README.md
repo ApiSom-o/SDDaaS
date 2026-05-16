@@ -111,7 +111,7 @@ dataset.csv           ← required by demo.py
 secure_dedup_50k.csv  ← required by compare.py
 demo.py
 compare.py
-generate_test_dataset.py
+generate_test_dataset.py ← required by demo.py
 requirements.txt
 README.md
 ```
